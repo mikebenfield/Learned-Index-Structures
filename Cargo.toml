@@ -1,5 +1,5 @@
 [package]
-name = "btree"
+name = "learned_index_structures"
 version = "0.1.0"
 authors = ["Michael Benfield <mike.benfield@gmail.com>"]
 
