@@ -73,7 +73,6 @@ where
 
     fn children(&self, node: u32) -> Option<&[u32; 2 * T]> {
         let node = &self.nodes[node as usize];
-        println!("children {}", node.children);
         if node.children == 0xFFFFFFFF {
             None
         } else {
@@ -103,7 +102,6 @@ where
             .iter()
             .enumerate()
         {
-            println!("{}, {:?}", i, nodekey);
             if key == nodekey {
                 return Some(self.indices(node)[i]);
             } else if key < nodekey {
@@ -115,15 +113,11 @@ where
         }
         match self.children(node) {
             None => None,
-            Some(c) => {
-                println!("{:?}", c);
-                self.rsearch(c[*self.key_count(node) as usize], key)
-            }
+            Some(c) => self.rsearch(c[*self.key_count(node) as usize], key),
         }
     }
 
     pub fn search(&self, key: K) -> Option<I> {
-        println!("searching for {:?}", key);
         self.rsearch(self.root, key)
     }
 
@@ -132,6 +126,10 @@ where
         self.nodes.push(Default::default());
         let y = self.children(x).expect("No children")[i];
         *self.key_count_mut(z) = (T - 1) as u32;
+        for j in 0..T - 1 {
+            self.keys_mut(z)[j] = self.keys(y)[j + T];
+            self.indices_mut(z)[j] = self.indices(y)[j + T];
+        }
         if let None = self.children(y) {
             self.nodes[z as usize].children = 0xFFFFFFFF;
         } else {
@@ -150,17 +148,18 @@ where
         self.children_mut(x).unwrap()[i + 1] = z;
         for j in i..*self.key_count(x) as usize {
             self.keys_mut(x)[j + 1] = self.keys(x)[j];
+            self.indices_mut(x)[j + 1] = self.indices(x)[j];
         }
-        self.keys_mut(x)[i] = self.keys(y)[T];
+        self.keys_mut(x)[i] = self.keys(y)[T - 1];
+        self.indices_mut(x)[i] = self.indices(y)[T - 1];
         *self.key_count_mut(x) += 1;
     }
 
     pub fn insert(&mut self, key: K, index: I) {
-        println!("inserting {:?}, {:?}", key, index);
-        println!("before {:?}", self);
         let r = self.root;
         if *self.key_count(r) == (2 * T - 1) as u32 {
             let s = self.nodes.len() as u32;
+            self.root = s;
             self.nodes.push(Default::default());
             self.nodes[s as usize].children = self.children.len() as u32;
             self.children.push(Default::default());
@@ -170,7 +169,6 @@ where
         } else {
             self.insert_nonfull(r, key, index);
         }
-        println!("after {:?}", self);
     }
 
     fn insert_nonfull(&mut self, x: u32, key: K, index: I) {
@@ -210,30 +208,11 @@ mod tests {
     #[test]
     fn t() {
         let mut b: BTree<f32, u32> = Default::default();
-        let arr = [
-            (1.0, 0),
-            (1.1, 1),
-            (1.5, 2),
-            (2.0, 3),
-            (2.1, 4),
-            (2.5, 5),
-            (2.6, 6),
-            (2.7, 7),
-            (2.8, 8),
-            (3.0, 9),
-            (3.2, 10),
-            (3.5, 11),
-            (4.0, 12),
-            (4.1, 13),
-            (4.2, 14),
-            (4.5, 15),
-            // (5.0, 16),
-        ];
-        for &(key, index) in arr.iter() {
-            b.insert(key, index);
+        for i in 0 .. 500 {
+            b.insert(i as f32, i as u32);
         }
-        for &(key, index) in arr.iter() {
-            assert_eq!(b.search(key).unwrap(), index);
+        for i in 0 .. 500 {
+            assert_eq!(b.search(i as f32).unwrap(), i as u32);
         }
     }
 }
