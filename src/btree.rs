@@ -1,4 +1,7 @@
-#![allow(dead_code)]
+//! Simple implementation of B Trees. Refer to Cormen et al (2007).
+//!
+//! Like Cormen's description, but also maintains an index associated with each
+//! key. Currently delete is not implemented.
 
 use std::fmt::Debug;
 
@@ -48,9 +51,8 @@ where
 
 impl<K, I> BTree<K, I>
 where
-    // XXX
     K: Copy + Default + PartialEq + PartialOrd + Debug,
-    I: PartialEq + Copy + Default + Debug,
+    I: Copy + Default + Debug,
 {
     pub fn new() -> Self {
         Default::default()
