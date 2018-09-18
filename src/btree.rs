@@ -3,7 +3,7 @@
 //! Like Cormen's description, but also maintains an index associated with each
 //! key. Currently delete is not implemented.
 
-use std::fmt::Debug;
+use model::Model;
 
 trait Increment {
     fn inc(self) -> Self;
@@ -51,8 +51,8 @@ where
 
 impl<K, I> BTree<K, I>
 where
-    K: Copy + Default + PartialEq + PartialOrd + Debug,
-    I: Copy + Default + Debug,
+    K: Copy + Default + PartialEq + PartialOrd,
+    I: Copy + Default,
 {
     pub fn new() -> Self {
         Default::default()
@@ -201,6 +201,16 @@ where
             let c = self.children(x).unwrap()[i as usize];
             self.insert_nonfull(c, key, index);
         }
+    }
+}
+
+impl<K, I> Model<K, I> for BTree<K, I>
+where
+    K: Copy + Default + PartialEq + PartialOrd,
+    I: Copy + Default,
+{
+    fn eval(&self, key: K) -> Option<I> {
+        self.search(key)
     }
 }
 

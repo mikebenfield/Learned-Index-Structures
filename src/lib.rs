@@ -1,5 +1,6 @@
 extern crate rand;
 
+pub mod bench;
 pub mod btree;
 pub mod model;
 pub mod synthetic;
