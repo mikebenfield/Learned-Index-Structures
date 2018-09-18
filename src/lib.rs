@@ -3,6 +3,7 @@ extern crate rand;
 pub mod bench;
 pub mod btree;
 pub mod model;
+pub mod neural;
 pub mod synthetic;
 
 #[cfg(test)]
