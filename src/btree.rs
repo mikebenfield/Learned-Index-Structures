@@ -20,7 +20,7 @@ struct BTreeNode<K, I> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-struct BTree<K, I> {
+pub struct BTree<K, I> {
     nodes: Vec<BTreeNode<K, I>>,
 
     // each item is an index into `nodes`
@@ -48,8 +48,9 @@ where
 
 impl<K, I> BTree<K, I>
 where
+    // XXX
     K: Copy + Default + PartialEq + PartialOrd + Debug,
-    I: Copy + Default + Debug,
+    I: PartialEq + Copy + Default + Debug,
 {
     pub fn new() -> Self {
         Default::default()
@@ -208,10 +209,10 @@ mod tests {
     #[test]
     fn t() {
         let mut b: BTree<f32, u32> = Default::default();
-        for i in 0 .. 500 {
+        for i in 0..500 {
             b.insert(i as f32, i as u32);
         }
-        for i in 0 .. 500 {
+        for i in 0..500 {
             assert_eq!(b.search(i as f32).unwrap(), i as u32);
         }
     }
