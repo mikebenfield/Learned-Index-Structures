@@ -14,6 +14,16 @@ struct Vector {
 }
 
 impl Layer {
+    fn apply_relu(&self, v: &Vector) -> Vector {
+        let mut result = self.apply(v);
+        for i in 0 .. result.data.len() {
+            if result.data[i] < 0.0 {
+                result.data[i] = 0.0;
+            }
+        }
+        result
+    }
+
     fn apply(&self, v: &Vector) -> Vector {
         debug_assert!(self.data.len() % v.data.len() == 0);
         let out_dim = self.data.len() / v.data.len();
