@@ -5,3 +5,5 @@ authors = ["Michael Benfield <mike.benfield@gmail.com>"]
 
 [dependencies]
 rand = "0.5.5"
+tempfile = "3.0.4"
+toml = "0.4.7"
