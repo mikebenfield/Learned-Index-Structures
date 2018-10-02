@@ -88,7 +88,6 @@ def train(toml_file, data_file):
 
     pred_labels = model.predict(keys)
 
-    print('select models')
     selected_models = select_next_model(
         pred_labels, labels[-1], t['model']['btree_count'])
 
@@ -143,7 +142,7 @@ def main():
 
     model, btree_indices = train(args.config, args.index)
 
-    save("/Users/mike/trashout.toml", model, btree_indices)
+    save(args.save, model, btree_indices)
 
 
 if __name__ == '__main__':

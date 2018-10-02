@@ -19,15 +19,15 @@ fn main() {
     let data = forwarding_model::read_data(&args[2]);
     let model = ForwardingModel::read_toml(&args[1], &data);
     println!(
-        "{:.4}",
-        duration_to_secs(bench::bench(&model, &data, 100000))
+        "Time for neural net model: {:.4}",
+        duration_to_secs(bench::bench(&model, &data, 10000))
     );
     let mut btree = BTree::new();
     for i in 0..data.len() {
         btree.insert(data[i], i as u32);
     }
     println!(
-        "{:.4}",
-        duration_to_secs(bench::bench(&btree, &data, 100000))
+        "Time for B Tree: {:.4}",
+        duration_to_secs(bench::bench(&btree, &data, 10000))
     );
 }
