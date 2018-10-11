@@ -51,8 +51,6 @@ fn value_array_arrays(v: &Value) -> Box<[Box<[u32]>]> {
             if let Array(immediate_array) = value {
                 let mut array: Vec<u32> = Vec::new();
                 for integer in immediate_array.iter() {
-                    // println!("OK");
-                    // println!("it's {:?}", integer);
                     if let Integer(i) = integer {
                         array.push(*i as u32);
                     } else {

@@ -16,6 +16,9 @@ performed among nearby records to find the correct record.
 My model is a simplified version of that in the paper: I use only one top level
 neural net, which feeds into one of many B Trees.
 
+You can see a few slides I made about this project
+[here](https://docs.google.com/presentation/d/1lTMOZBnLd5YrKf26UCM2tFr3qWYijWIiY7W2es9g_tA/edit).
+
 ## Requirements
 
 You'll need a recent Python 3 with the `toml` library (do `pip install toml`)

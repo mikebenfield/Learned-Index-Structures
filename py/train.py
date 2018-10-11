@@ -97,8 +97,6 @@ def train(toml_file, data_file):
         selected_model = int(selected_models[i])
         btree_indices[selected_model].append(i)
 
-    print("labels", pred_labels[:5])
-
     return model, btree_indices
 
 
