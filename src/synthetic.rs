@@ -16,9 +16,9 @@ where
 }
 
 /// generate `count` samples drawn from a Log-Normal distribution with mean 2.0
-/// and std deviation 4.0, sorted.
+/// and std deviation 3.0, sorted.
 pub fn gen_lognormal(count: usize) -> Box<[f32]> {
     let mut rng = XorShiftRng::from_entropy();
-    let lognormal = LogNormal::new(2.0, 4.0);
+    let lognormal = LogNormal::new(0.0, 0.25);
     gen_numbers(|| lognormal.sample(&mut rng) as f32, count)
 }
