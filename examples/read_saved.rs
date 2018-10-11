@@ -6,7 +6,6 @@ use std::time::Duration;
 use learned_index_structures::bench;
 use learned_index_structures::btree::BTree;
 use learned_index_structures::forwarding_model::{self, ForwardingModel};
-use learned_index_structures::model::Model;
 
 fn duration_to_secs(dur: Duration) -> f64 {
     let mut secs = dur.as_secs() as f64;

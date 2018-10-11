@@ -10,7 +10,7 @@ use toml::{self, Value};
 
 use btree::BTree;
 use model::Model;
-use neural::{Layer, Network, Vector};
+use neural::Network;
 
 use self::Value::*;
 
@@ -22,14 +22,25 @@ pub struct ForwardingModel {
 
 impl Model<f32, u32> for ForwardingModel {
     fn eval(&self, key: f32) -> Option<u32> {
-        let vec = Vector {
-            data: vec![key].into_boxed_slice(),
-        };
-        let result_vec = self.net.apply(&vec);
-        let predicted_label = result_vec.data[0];
+        let buf_size = self.net.buf_size();
+        let mut buf1 = vec![0.0f32; buf_size];
+        let mut buf2 = vec![0.0f32; buf_size];
+        let predicted_label = self.net.apply_buffer(key, &mut buf1, &mut buf2);
         let model =
             ((predicted_label / self.max_prediction as f32) * self.btrees.len() as f32) as usize;
         self.btrees[model].eval(key)
+    }
+
+    fn eval_many(&self, keys: &[f32], indices: &mut [Option<u32>]) {
+        let buf_size = self.net.buf_size();
+        let mut buf1 = vec![0.0f32; buf_size];
+        let mut buf2 = vec![0.0f32; buf_size];
+        for (i, &key) in keys.iter().enumerate() {
+            let predicted_label = self.net.apply_buffer(key, &mut buf1, &mut buf2);
+            let model = ((predicted_label / self.max_prediction as f32) * self.btrees.len() as f32)
+                as usize;
+            indices[i] = self.btrees[model].eval(key)
+        }
     }
 }
 
@@ -40,6 +51,8 @@ fn value_array_arrays(v: &Value) -> Box<[Box<[u32]>]> {
             if let Array(immediate_array) = value {
                 let mut array: Vec<u32> = Vec::new();
                 for integer in immediate_array.iter() {
+                    // println!("OK");
+                    // println!("it's {:?}", integer);
                     if let Integer(i) = integer {
                         array.push(*i as u32);
                     } else {
@@ -56,32 +69,6 @@ fn value_array_arrays(v: &Value) -> Box<[Box<[u32]>]> {
         panic!("Invalid TOML format");
     }
 }
-
-// copy and pasted from the above function; should refactor but short on time
-fn value_array_arrays_float(v: &Value) -> Box<[Box<[f32]>]> {
-    if let Array(a) = v {
-        let mut arrays: Vec<Box<[f32]>> = Vec::new();
-        for value in a.iter() {
-            if let Array(immediate_array) = value {
-                let mut array: Vec<f32> = Vec::new();
-                for integer in immediate_array.iter() {
-                    if let Float(i) = integer {
-                        array.push(*i as f32);
-                    } else {
-                        panic!("Invalid TOML format");
-                    }
-                }
-                arrays.push(array.into_boxed_slice());
-            } else {
-                panic!("Invalid TOML format");
-            }
-        }
-        return arrays.into_boxed_slice();
-    } else {
-        panic!("Invalid TOML format");
-    }
-}
-
 
 pub fn read_data<P>(data_path: &P) -> Box<[f32]>
 where
@@ -133,58 +120,44 @@ impl ForwardingModel {
                 .expect("Unable to read TOML file");
             buf
         };
+
         let value: Value = toml::from_str(&s).expect("Unable to parse TOML file");
 
-        if let Table(table) = value {
-            // read layers
-            let mut layers = Vec::new();
-            for i in 0.. {
-                let layer_var = format!("layer{}", i);
-                if let Some(layer) = table.get(&layer_var) {
-                    let arrays = value_array_arrays_float(&layer);
-                    layers.push(Layer {
-                        data: arrays[0].clone(),
-                        bias: arrays[1].clone(),
-                    });
-                } else {
-                    break;
-                }
-            }
+        let table = if let &Table(ref table) = &value {
+            table
+        } else {
+            panic!("Bad TOML format");
+        };
 
-            let network = Network {
-                layers: layers.into_boxed_slice(),
-            };
-
-            // read indices for btree
-            let indices = if let Some(indices) = table.get("btree_indices") {
-                indices
-            } else {
-                panic!("Invalid TOML format");
-            };
-
-            let arrays = value_array_arrays(&indices);
-
-            let mut max_prediction: u32 = 0;
-
-            let btrees: Vec<BTree<f32, u32>> = arrays
-                .iter()
-                .map(|array| {
-                    let mut btree = BTree::new();
-                    for &index in array.iter() {
-                        max_prediction = max(index, max_prediction);
-                        btree.insert(data[index as usize], index);
-                    }
-                    btree
-                })
-                .collect();
-
-            return ForwardingModel {
-                net: network,
-                btrees: btrees.into_boxed_slice(),
-                max_prediction,
-            };
+        let indices = if let Some(indices) = table.get("btree_indices") {
+            indices
         } else {
             panic!("Invalid TOML format");
-        }
+        };
+
+        let arrays = value_array_arrays(&indices);
+
+        let mut max_prediction: u32 = 0;
+
+        let btrees: Vec<BTree<f32, u32>> = arrays
+            .iter()
+            .map(|array| {
+                let mut btree = BTree::new();
+                for &index in array.iter() {
+                    max_prediction = max(index, max_prediction);
+                    btree.insert(data[index as usize], index);
+                }
+                btree
+            })
+            .collect();
+
+        let network = Network::from_toml(&value);
+
+        return ForwardingModel {
+            net: network,
+            btrees: btrees.into_boxed_slice(),
+            max_prediction,
+        };
+
     }
 }
