@@ -16,30 +16,32 @@ performed among nearby records to find the correct record.
 My model is a simplified version of that in the paper: I use only one top level
 neural net, which feeds into one of many B Trees.
 
-## Usage
+## Requirements
+
+You'll need a recent Python 3 with the `toml` library (do `pip install toml`)
+and Keras and Tensorflow.
+
+You'll need Rust and related tools; the easiest way to install them is to use
+[rustup](https://rustup.rs).
+
+## How to use
 
 Training and inference is done using a combination of Rust programs in
 'example/' and the Python script in 'py/'.
 
-To generate 100000 data points (sampled from a log normal distribution) in the
-file `data_filename`:
-`cargo run --example data_filename 100000`
-(You'll need Rust and related tools installed; the easiest way to do that is
-using [rustup](https://rustup.rs).)
-
-Then, to train a model on those data points, saving the result
-to `out.toml`:
-`python py/train.py --config examples/config.toml --index data_filename --save out.toml`
-You'll need Keras and the Python `toml` library installed.
+To generate 100,0000 data points (sampled from a log normal distribution),
+train a model, and benchmark both a B Tree and the learned model on 10,000
+index lookups, do the following from the main directory of this repository:
+```
+$ cargo run --example data_filename 100000
+$ python py/train.py --config examples/config.toml --index data_filename --save out.toml
+$ cargo run --release --example read_saved out.toml data_filename
+```
 
 If you want to modify the type of model used, you can modify the
 `examples/config.toml` file. The format is simple: the lines of the form "0 =
 32" indicate the width of each layer. `btree_count` indicates how many btrees
 are used.
-
-Finally, to benchmark both a B Tree and the learned index structure on
-looking up 10,000 records
-`cargo run --release --example read_saved out.toml data_filename`
 
 ## Implementation notes
 
@@ -69,7 +71,7 @@ collection.
 
 ## Benchmarks
 
-Currently, on my system, executing the commands under `Usage` gives
+Currently, on my system, executing the commands under `How to use` above gives
 these performance results:
 
 | Model         | Runtime (sec) |
@@ -80,8 +82,8 @@ these performance results:
 That is, the learned model is slow.
 
 This is entirely predictable: the current implementation simply does matrix
-multiplication scalar by scalar. I looked at the assembly output by the
-compiler, and the code is not auto-vectorized at all.
+multiplication scalar by scalar. I looked at the assembly output by the compiler
+and the code is not auto-vectorized at all.
 
 I'm working on (and will hopefully finish very shortly) a more optimized version
 using vectorized AVX instructions. This should be dramatically faster than the
@@ -97,7 +99,7 @@ I think the idea of treating the mapping from key to index as a function
 approximation problem is really interesting.
 
 Having worked with and thought about this idea for some time though, I am
-skeptical that neural networks are the right tool. Note that, in the case of the
+skeptical that neural networks are the right tool. Note that in the case of the
 randomly generated log normal data, we are essentially just learning the
 cumulative distribution function of the log normal distribution. This is a
 relatively simple function, and a hierarchy of thousands of neural nets is an
@@ -123,18 +125,21 @@ lg(10,000) = 13 levels of the B Tree.
 
 Traversing each layer of a B Tree requires very little computation. In contrast,
 even a small neural network as used in the paper requires many thousands of
-operations. Due to modern vectorized CPUs, with substantial engineering effort
-the authors are able to make much of that massive amount of computation happen
-in parallel and beat the performance of a B Tree, which cannot be parallelized.
-Nevertheless, I believe in practice a more work-efficient approach would be
-preferable, especially considering total throughput.
+operations. Due to the existence of modern CPUs with wide SIMD instructions,
+with substantial engineering effort the authors are able to make much of that
+massive amount of computation happen in parallel and beat the performance of a B
+Tree, which cannot be parallelized. Nevertheless, I believe in practice a more
+work-efficient approach would be preferable, especially considering total
+throughput.
 
 In particular, if I had an infinite amount of time, I would investigate
 the following approaches:
 
 1. GPU-based B Trees. Although a single B Tree search cannot be parallelized, it
    would be possible to batch indexes and perform many thousands in parallel on
-   the GPU. This would not solve the latency issue, but for applications where throughput rather than latency is the concern, I'd be interested to see the results.
+   the GPU. This would not solve the latency issue, but for applications where
+   throughput rather than latency is the concern, I'd be interested to see the
+   results.
 
 2. Other function approximation techniques. There are so many methods it's hard
 to know where to start. I mentioned splines earlier. There are also Chebyshev
