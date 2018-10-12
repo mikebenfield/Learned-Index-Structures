@@ -30,7 +30,7 @@ You'll need Rust and related tools; the easiest way to install them is to use
 ## How to use
 
 Training and inference is done using a combination of Rust programs in
-'example/' and the Python script in 'py/'.
+`examples/` and the Python script in `py/`.
 
 To generate 100,0000 data points (sampled from a log normal distribution),
 train a model, and benchmark both a B Tree and the learned model on 10,000
